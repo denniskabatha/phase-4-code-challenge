@@ -1,7 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
-from sqlalchemy.orm import validates
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy_serializer import SerializerMixin
 
 metadata = MetaData(naming_convention={
@@ -10,7 +8,6 @@ metadata = MetaData(naming_convention={
 
 db = SQLAlchemy(metadata=metadata)
 
-
 class Hero(db.Model, SerializerMixin):
     __tablename__ = 'heroes'
 
@@ -18,13 +15,19 @@ class Hero(db.Model, SerializerMixin):
     name = db.Column(db.String)
     super_name = db.Column(db.String)
 
-    # add relationship
+    # Add relationships if necessary
+    hero_powers = db.relationship('HeroPower', back_populates='hero')
 
-    # add serialization rules
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'super_name': self.super_name,
+            # Include hero powers if needed
+        }
 
     def __repr__(self):
         return f'<Hero {self.id}>'
-
 
 class Power(db.Model, SerializerMixin):
     __tablename__ = 'powers'
@@ -33,15 +36,15 @@ class Power(db.Model, SerializerMixin):
     name = db.Column(db.String)
     description = db.Column(db.String)
 
-    # add relationship
-
-    # add serialization rules
-
-    # add validation
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+        }
 
     def __repr__(self):
         return f'<Power {self.id}>'
-
 
 class HeroPower(db.Model, SerializerMixin):
     __tablename__ = 'hero_powers'
@@ -49,11 +52,20 @@ class HeroPower(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     strength = db.Column(db.String, nullable=False)
 
-    # add relationships
+    # Relationships
+    hero_id = db.Column(db.Integer, db.ForeignKey('heroes.id'))
+    power_id = db.Column(db.Integer, db.ForeignKey('powers.id'))
 
-    # add serialization rules
+    hero = db.relationship('Hero', back_populates='hero_powers')
+    power = db.relationship('Power')
 
-    # add validation
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'strength': self.strength,
+            'hero_id': self.hero_id,
+            'power_id': self.power_id,
+        }
 
     def __repr__(self):
         return f'<HeroPower {self.id}>'
